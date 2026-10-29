@@ -44,6 +44,17 @@ exports.initiatePayment = async (req, res) => {
     // Get client IP
     const client_ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress || '127.0.0.1';
 
+    // Determine dynamic public base URL for return_url and cancel_url
+    const proto = req.headers['x-forwarded-proto'] || (req.secure ? 'https' : 'http');
+    const host = req.headers['x-forwarded-host'] || req.headers.host;
+    let dynamicReturnUrl = undefined;
+    let dynamicCancelUrl = undefined;
+
+    if (host && !host.includes('localhost') && !host.includes('127.0.0.1')) {
+      dynamicReturnUrl = `${proto}://${host}/api/payment/callback`;
+      dynamicCancelUrl = `${proto}://${host}/payment-status?status=cancelled`;
+    }
+
     // Initiate transaction with shurjoPay
     const spResult = await shurjopayService.makePayment({
       amount: Number(amount),
@@ -55,7 +66,9 @@ exports.initiatePayment = async (req, res) => {
       customer_address,
       customer_email: customer_email || 'customer@example.com',
       customer_post_code,
-      client_ip: client_ip === '::1' ? '127.0.0.1' : client_ip
+      client_ip: client_ip === '::1' ? '127.0.0.1' : client_ip,
+      return_url: dynamicReturnUrl,
+      cancel_url: dynamicCancelUrl
     });
 
     const paymentRecordData = {
@@ -112,7 +125,9 @@ exports.initiatePayment = async (req, res) => {
  * GET /api/payment/callback?order_id=NOK...
  */
 exports.handleCallback = async (req, res) => {
-  const clientUrl = process.env.CLIENT_URL || (process.env.VERCEL ? '' : 'http://localhost:5173');
+  const host = req.headers['x-forwarded-host'] || req.headers.host;
+  const isPublicHost = host && !host.includes('localhost') && !host.includes('127.0.0.1');
+  const clientUrl = isPublicHost ? '' : (process.env.CLIENT_URL || 'http://localhost:5173');
   const { order_id } = req.query;
 
   console.log(`[Callback] Received redirect from shurjoPay with order_id: ${order_id}`);

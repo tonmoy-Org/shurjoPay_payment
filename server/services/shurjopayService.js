@@ -78,8 +78,8 @@ class ShurjopayService {
     const requestBody = {
       prefix: this.prefix,
       token: auth.token,
-      return_url: this.returnUrl,
-      cancel_url: this.cancelUrl,
+      return_url: payload.return_url || this.returnUrl,
+      cancel_url: payload.cancel_url || this.cancelUrl,
       store_id: auth.storeId,
       amount: payload.amount,
       order_id: payload.order_id,
