@@ -29,11 +29,14 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('form');
   const [selectedOrderId, setSelectedOrderId] = useState(null);
 
-  // Check if returning from shurjoPay callback
+  // Check if returning from shurjoPay callback or reloading on a subroute
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('order_id') || params.get('status')) {
+    const pathname = window.location.pathname;
+    if (params.get('order_id') || params.get('status') || pathname.includes('payment-status')) {
       setActiveTab('status');
+    } else if (pathname.includes('transactions') || pathname.includes('history')) {
+      setActiveTab('history');
     }
   }, []);
 
@@ -45,7 +48,7 @@ export default function App() {
 
   const handleBackToForm = () => {
     setSelectedOrderId(null);
-    window.history.pushState({}, '', window.location.pathname);
+    window.history.pushState({}, '', '/');
     setActiveTab('form');
   };
 

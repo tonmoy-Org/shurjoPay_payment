@@ -278,9 +278,15 @@ exports.verifyPaymentStatus = async (req, res) => {
 exports.getAllOrders = async (req, res) => {
   try {
     let payments = [];
-    try {
-      payments = await Payment.find().sort({ createdAt: -1 }).limit(50);
-    } catch (dbErr) {
+    const isDbConnected = Payment.db && Payment.db.readyState === 1;
+    if (isDbConnected) {
+      try {
+        payments = await Payment.find().sort({ createdAt: -1 }).limit(50);
+      } catch (dbErr) {
+        console.warn('[DB Fallback] Could not fetch from MongoDB, using memory store:', dbErr.message);
+        payments = Array.from(inMemoryPayments.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      }
+    } else {
       payments = Array.from(inMemoryPayments.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
     }
     return res.status(200).json({

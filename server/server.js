@@ -21,20 +21,23 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 
-// Routes
+// Routes (mount both with and without /api prefix for robust routing)
 app.use('/api/payment', paymentRoutes);
+app.use('/payment', paymentRoutes);
 
 // Health check
-app.get('/api/health', (req, res) => {
+const healthHandler = (req, res) => {
   res.json({
     status: 'online',
     timestamp: new Date().toISOString(),
     service: 'shurjoPay MERN Integration API'
   });
-});
+};
+app.get('/api/health', healthHandler);
+app.get('/health', healthHandler);
 
 // Root welcome route
-app.get('/', (req, res) => {
+const welcomeHandler = (req, res) => {
   res.json({
     message: 'shurjoPay Payment Gateway Server is running.',
     endpoints: {
@@ -44,7 +47,9 @@ app.get('/', (req, res) => {
       orders: 'GET /api/payment/orders'
     }
   });
-});
+};
+app.get('/', welcomeHandler);
+app.get('/api', welcomeHandler);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -55,13 +60,11 @@ app.use((err, req, res, next) => {
   });
 });
 
-if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
-  app.listen(PORT, () => {
-    console.log(`=========================================`);
-    console.log(` Server running on http://localhost:${PORT}`);
-    console.log(` shurjoPay Callback: http://localhost:${PORT}/api/payment/callback`);
-    console.log(`=========================================`);
-  });
-}
+app.listen(PORT, () => {
+  console.log(`=========================================`);
+  console.log(` Server running on http://localhost:${PORT}`);
+  console.log(` shurjoPay Callback: http://localhost:${PORT}/api/payment/callback`);
+  console.log(`=========================================`);
+});
 
 module.exports = app;
