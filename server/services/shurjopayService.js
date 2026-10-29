@@ -5,6 +5,7 @@ class ShurjopayService {
     this.endpoint = process.env.SP_ENDPOINT || 'https://sandbox.shurjopayment.com/api';
     this.username = process.env.SP_USERNAME || 'sp_sandbox';
     this.password = process.env.SP_PASSWORD || 'pyyk97hu&6u6';
+    this.prefix = process.env.SP_PREFIX || 'NOK';
     const vercelHost = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
     const defaultOrigin = vercelHost ? `https://${vercelHost}` : null;
 
@@ -105,13 +106,17 @@ class ShurjopayService {
       console.log('[shurjoPay] Initiate payment response:', data);
 
       if (!data || !data.checkout_url) {
-        throw new Error(data?.message || 'shurjoPay did not return a valid checkout URL');
+        const validationMsg = data && typeof data === 'object' ? Object.values(data).filter(v => typeof v === 'string').join(', ') : null;
+        throw new Error(validationMsg || data?.message || 'shurjoPay did not return a valid checkout URL');
       }
 
       return data;
     } catch (error) {
       console.error('[shurjoPay] Initiate payment error:', error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || error.message || 'Initiate payment error');
+      const serverErr = error.response?.data && typeof error.response.data === 'object' 
+        ? (error.response.data.message || Object.values(error.response.data).join(', '))
+        : null;
+      throw new Error(serverErr || error.message || 'Initiate payment error');
     }
   }
 
