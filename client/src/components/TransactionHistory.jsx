@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { RefreshCw, Search, ExternalLink, Calendar, User, DollarSign } from 'lucide-react';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/payment';
+import { API_BASE_URL } from '../utils/api';
 
 export default function TransactionHistory({ onViewDetails }) {
   const [transactions, setTransactions] = useState([]);
