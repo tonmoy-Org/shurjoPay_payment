@@ -5,9 +5,11 @@ class ShurjopayService {
     this.endpoint = process.env.SP_ENDPOINT || 'https://sandbox.shurjopayment.com/api';
     this.username = process.env.SP_USERNAME || 'sp_sandbox';
     this.password = process.env.SP_PASSWORD || 'pyyk97hu&6u6';
-    this.prefix = process.env.SP_PREFIX || 'NOK';
-    this.returnUrl = process.env.SP_RETURN_URL || 'http://localhost:5000/api/payment/callback';
-    this.cancelUrl = process.env.SP_CANCEL_URL || 'http://localhost:5173/payment-status?status=cancelled';
+    const vercelHost = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
+    const defaultOrigin = vercelHost ? `https://${vercelHost}` : null;
+
+    this.returnUrl = process.env.SP_RETURN_URL || (defaultOrigin ? `${defaultOrigin}/api/payment/callback` : 'http://localhost:5000/api/payment/callback');
+    this.cancelUrl = process.env.SP_CANCEL_URL || (defaultOrigin ? `${defaultOrigin}/payment-status?status=cancelled` : 'http://localhost:5173/payment-status?status=cancelled');
 
     this.token = null;
     this.tokenExpiry = null;

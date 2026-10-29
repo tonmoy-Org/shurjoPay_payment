@@ -112,7 +112,7 @@ exports.initiatePayment = async (req, res) => {
  * GET /api/payment/callback?order_id=NOK...
  */
 exports.handleCallback = async (req, res) => {
-  const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+  const clientUrl = process.env.CLIENT_URL || (process.env.VERCEL ? '' : 'http://localhost:5173');
   const { order_id } = req.query;
 
   console.log(`[Callback] Received redirect from shurjoPay with order_id: ${order_id}`);

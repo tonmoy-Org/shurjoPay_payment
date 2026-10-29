@@ -55,9 +55,13 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`=========================================`);
-  console.log(` Server running on http://localhost:${PORT}`);
-  console.log(` shurjoPay Callback: http://localhost:${PORT}/api/payment/callback`);
-  console.log(`=========================================`);
-});
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`=========================================`);
+    console.log(` Server running on http://localhost:${PORT}`);
+    console.log(` shurjoPay Callback: http://localhost:${PORT}/api/payment/callback`);
+    console.log(`=========================================`);
+  });
+}
+
+module.exports = app;

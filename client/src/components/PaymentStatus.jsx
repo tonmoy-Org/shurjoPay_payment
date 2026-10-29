@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import ShurjopayLogo from './ShurjopayLogo';
 import { CheckCircle2, XCircle, ArrowLeft, Printer, RefreshCw, AlertTriangle } from 'lucide-react';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/payment';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/payment';
 
 export default function PaymentStatus({ onBackToForm }) {
   const [loading, setLoading] = useState(true);
