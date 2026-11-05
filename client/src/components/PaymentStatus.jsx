@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import ShurjopayLogo from './ShurjopayLogo';
-import { CheckCircle2, XCircle, ArrowLeft, Printer, RefreshCw, AlertTriangle } from 'lucide-react';
-
+import { CheckCircle2, XCircle, ArrowLeft, Printer, AlertTriangle, Copy, Check } from 'lucide-react';
 import { API_BASE_URL } from '../utils/api';
 
 export default function PaymentStatus({ onBackToForm }) {
   const [loading, setLoading] = useState(true);
   const [paymentDetails, setPaymentDetails] = useState(null);
   const [error, setError] = useState('');
+  const [copiedKey, setCopiedKey] = useState('');
 
   // Extract query params from current URL
   const queryParams = new URLSearchParams(window.location.search);
@@ -56,21 +55,27 @@ export default function PaymentStatus({ onBackToForm }) {
   };
 
   const handleReset = () => {
-    // Clear URL query parameters
     window.history.replaceState({}, document.title, window.location.pathname);
     if (onBackToForm) {
       onBackToForm();
     }
   };
 
+  const copyToClipboard = (text, key) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey(''), 2000);
+  };
+
   return (
     <div className="status-card">
       <div className="card-header-bar">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div className="voucher-header-info">
           <div className="card-header-icon">
-            <CheckCircle2 size={20} color="#3ea74c" />
+            <CheckCircle2 size={18} color="#22a048" />
           </div>
-          <span style={{ fontSize: '1.05rem', fontWeight: 700, color: '#1a3459' }}>
+          <span className="voucher-title">
             Payment Transaction Voucher
           </span>
         </div>
@@ -80,16 +85,16 @@ export default function PaymentStatus({ onBackToForm }) {
       </div>
 
       {loading ? (
-        <div style={{ padding: '60px 24px', textAlign: 'center' }}>
-          <div className="spinner" style={{ margin: '0 auto 16px', borderColor: '#3ea74c', borderTopColor: 'transparent', width: '32px', height: '32px' }} />
-          <h3 style={{ fontSize: '1.1rem', color: '#1a3459' }}>Verifying Transaction Status with shurjoPay...</h3>
-          <p style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '6px' }}>Please wait while we confirm your payment record.</p>
+        <div className="status-loading-state">
+          <div className="spinner large-spinner" />
+          <h3 className="loading-heading">Verifying Transaction with shurjoPay...</h3>
+          <p className="loading-subheading">Please wait while we confirm your payment record.</p>
         </div>
       ) : (
         <>
-          <div className={`status-header ${isSuccess ? 'success' : 'failed'}`}>
-            <div className={`status-icon-wrap ${isSuccess ? 'success' : 'failed'}`}>
-              {isSuccess ? <CheckCircle2 size={38} /> : isCancelled ? <AlertTriangle size={38} /> : <XCircle size={38} />}
+          <div className={`status-header ${isSuccess ? 'success' : isCancelled ? 'cancelled' : 'failed'}`}>
+            <div className={`status-icon-wrap ${isSuccess ? 'success' : isCancelled ? 'cancelled' : 'failed'}`}>
+              {isSuccess ? <CheckCircle2 size={36} /> : isCancelled ? <AlertTriangle size={36} /> : <XCircle size={36} />}
             </div>
             <h2 className="status-title">
               {isSuccess ? 'Payment Successful!' : isCancelled ? 'Payment Cancelled' : 'Payment Failed'}
@@ -105,70 +110,130 @@ export default function PaymentStatus({ onBackToForm }) {
 
           <div className="receipt-body">
             {error && (
-              <div className="alert-error" style={{ marginBottom: '16px' }}>
+              <div className="alert-error" role="alert" style={{ marginBottom: '16px' }}>
                 <span>{error}</span>
               </div>
             )}
 
-            <table className="receipt-table">
-              <tbody>
-                <tr>
-                  <td className="label">Order ID (Merchant)</td>
-                  <td className="val">{paymentDetails?.order_id || orderId || 'N/A'}</td>
-                </tr>
-                {paymentDetails?.sp_order_id && (
-                  <tr>
-                    <td className="label">shurjoPay Order ID</td>
-                    <td className="val">{paymentDetails.sp_order_id}</td>
-                  </tr>
-                )}
-                {paymentDetails?.bank_trx_id && (
-                  <tr>
-                    <td className="label">Bank Transaction ID</td>
-                    <td className="val">{paymentDetails.bank_trx_id}</td>
-                  </tr>
-                )}
-                <tr>
-                  <td className="label">Amount</td>
-                  <td className="val" style={{ color: isSuccess ? '#15803d' : '#1e293b', fontSize: '1.05rem' }}>
-                    {paymentDetails?.amount || '---'} {paymentDetails?.currency || 'BDT'}
-                  </td>
-                </tr>
-                {paymentDetails?.payment_method && (
-                  <tr>
-                    <td className="label">Payment Method</td>
-                    <td className="val">{paymentDetails.payment_method.toUpperCase()}</td>
-                  </tr>
-                )}
-                {paymentDetails?.customer_name && (
-                  <tr>
-                    <td className="label">Customer Name</td>
-                    <td className="val">{paymentDetails.customer_name}</td>
-                  </tr>
-                )}
-                {paymentDetails?.customer_phone && (
-                  <tr>
-                    <td className="label">Phone</td>
-                    <td className="val">{paymentDetails.customer_phone}</td>
-                  </tr>
-                )}
-                <tr>
-                  <td className="label">Status Code (sp_code)</td>
-                  <td className="val">{paymentDetails?.sp_code || spCode || 'N/A'}</td>
-                </tr>
-                <tr>
-                  <td className="label">Verification Timestamp</td>
-                  <td className="val" style={{ fontSize: '0.8rem' }}>
-                    {paymentDetails?.verified_at ? new Date(paymentDetails.verified_at).toLocaleString() : new Date().toLocaleString()}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <div className="receipt-list">
+              {/* Order ID */}
+              <div className="receipt-row">
+                <span className="receipt-label">Order ID (Merchant)</span>
+                <div className="receipt-val-wrap">
+                  <span className="receipt-val mono">
+                    {paymentDetails?.order_id || orderId || 'N/A'}
+                  </span>
+                  {(paymentDetails?.order_id || orderId) && (
+                    <button
+                      type="button"
+                      className="copy-btn"
+                      onClick={() => copyToClipboard(paymentDetails?.order_id || orderId, 'order_id')}
+                      title="Copy Order ID"
+                      aria-label="Copy Order ID"
+                    >
+                      {copiedKey === 'order_id' ? <Check size={13} color="#22a048" /> : <Copy size={13} />}
+                    </button>
+                  )}
+                </div>
+              </div>
 
-            <div className="button-row" style={{ marginTop: '28px' }}>
+              {/* shurjoPay Order ID */}
+              {paymentDetails?.sp_order_id && (
+                <div className="receipt-row">
+                  <span className="receipt-label">shurjoPay Order ID</span>
+                  <div className="receipt-val-wrap">
+                    <span className="receipt-val mono">{paymentDetails.sp_order_id}</span>
+                    <button
+                      type="button"
+                      className="copy-btn"
+                      onClick={() => copyToClipboard(paymentDetails.sp_order_id, 'sp_order_id')}
+                      title="Copy shurjoPay Order ID"
+                      aria-label="Copy shurjoPay Order ID"
+                    >
+                      {copiedKey === 'sp_order_id' ? <Check size={13} color="#22a048" /> : <Copy size={13} />}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Bank Transaction ID */}
+              {paymentDetails?.bank_trx_id && (
+                <div className="receipt-row">
+                  <span className="receipt-label">Bank Transaction ID</span>
+                  <div className="receipt-val-wrap">
+                    <span className="receipt-val mono">{paymentDetails.bank_trx_id}</span>
+                    <button
+                      type="button"
+                      className="copy-btn"
+                      onClick={() => copyToClipboard(paymentDetails.bank_trx_id, 'bank_trx_id')}
+                      title="Copy Bank Transaction ID"
+                      aria-label="Copy Bank Transaction ID"
+                    >
+                      {copiedKey === 'bank_trx_id' ? <Check size={13} color="#22a048" /> : <Copy size={13} />}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Amount */}
+              <div className="receipt-row highlight-row">
+                <span className="receipt-label">Total Amount</span>
+                <span className="receipt-val amount-val">
+                  {paymentDetails?.amount ? `৳${paymentDetails.amount}` : '---'}{' '}
+                  <span className="currency-badge">{paymentDetails?.currency || 'BDT'}</span>
+                </span>
+              </div>
+
+              {/* Payment Method */}
+              {paymentDetails?.payment_method && (
+                <div className="receipt-row">
+                  <span className="receipt-label">Payment Method</span>
+                  <span className="receipt-val method-val">
+                    {paymentDetails.payment_method.toUpperCase()}
+                  </span>
+                </div>
+              )}
+
+              {/* Customer Name */}
+              {paymentDetails?.customer_name && (
+                <div className="receipt-row">
+                  <span className="receipt-label">Customer Name</span>
+                  <span className="receipt-val">{paymentDetails.customer_name}</span>
+                </div>
+              )}
+
+              {/* Phone */}
+              {paymentDetails?.customer_phone && (
+                <div className="receipt-row">
+                  <span className="receipt-label">Phone</span>
+                  <span className="receipt-val mono">{paymentDetails.customer_phone}</span>
+                </div>
+              )}
+
+              {/* Status Code */}
+              <div className="receipt-row">
+                <span className="receipt-label">Status Code (sp_code)</span>
+                <span className="receipt-val mono badge-code">
+                  {paymentDetails?.sp_code || spCode || 'N/A'}
+                </span>
+              </div>
+
+              {/* Timestamp */}
+              <div className="receipt-row">
+                <span className="receipt-label">Verification Time</span>
+                <span className="receipt-val date-val">
+                  {paymentDetails?.verified_at
+                    ? new Date(paymentDetails.verified_at).toLocaleString()
+                    : new Date().toLocaleString()}
+                </span>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="receipt-actions-row">
               <button
                 type="button"
-                className="btn-default"
+                className="btn-default voucher-btn"
                 onClick={handleReset}
               >
                 <ArrowLeft size={16} />
@@ -177,7 +242,7 @@ export default function PaymentStatus({ onBackToForm }) {
 
               <button
                 type="button"
-                className="btn-pay"
+                className="btn-pay voucher-btn"
                 onClick={handlePrint}
               >
                 <Printer size={16} />

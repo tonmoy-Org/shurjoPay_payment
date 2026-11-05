@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-import ShurjopayLogo from './ShurjopayLogo';
-import { CreditCard, RotateCcw, ShieldCheck, AlertCircle, Sparkles } from 'lucide-react';
-
+import { CreditCard, RotateCcw, ShieldCheck, AlertCircle, Sparkles, User, Phone, MapPin, Mail } from 'lucide-react';
 import { API_BASE_URL } from '../utils/api';
 
 const DEFAULT_FORM_VALUES = {
@@ -13,6 +11,8 @@ const DEFAULT_FORM_VALUES = {
   customer_email: 'tanvir.test@gmail.com',
   currency: 'BDT'
 };
+
+const PRESET_AMOUNTS = ['50', '100', '500', '1000'];
 
 export default function PaymentForm({ onSwitchToHistory }) {
   const [formData, setFormData] = useState({
@@ -32,6 +32,11 @@ export default function PaymentForm({ onSwitchToHistory }) {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    if (error) setError('');
+  };
+
+  const handleSelectPresetAmount = (preset) => {
+    setFormData((prev) => ({ ...prev, amount: preset }));
     if (error) setError('');
   };
 
@@ -95,7 +100,6 @@ export default function PaymentForm({ onSwitchToHistory }) {
 
       if (data.checkout_url) {
         console.log('Redirecting to shurjoPay checkout:', data.checkout_url);
-        // Redirect browser to shurjoPay secure sandbox gateway
         window.location.href = data.checkout_url;
       } else {
         throw new Error('No checkout URL received from payment gateway.');
@@ -110,17 +114,17 @@ export default function PaymentForm({ onSwitchToHistory }) {
 
   return (
     <div className="payment-card">
-      {/* Form Top: No logo in form (Logo is in Navbar) */}
+      {/* Form Top Header */}
       <div className="card-header-bar">
         <div>
-          <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#1a3459', lineHeight: 1.2 }}>
+          <h2 className="card-title">
             Payment Checkout
           </h2>
-          <p style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '2px' }}>
-            Complete your transaction securely
+          <p className="card-subtitle">
+            Complete your transaction securely via shurjoPay
           </p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="badge-sandbox-wrap">
           <div className="badge-sandbox">
             <span className="dot" />
             <span>SANDBOX TEST</span>
@@ -131,37 +135,58 @@ export default function PaymentForm({ onSwitchToHistory }) {
       {/* Card Body */}
       <div className="card-body">
         {error && (
-          <div className="alert-error">
-            <AlertCircle size={18} />
+          <div className="alert-error" role="alert">
+            <AlertCircle size={18} className="alert-icon" />
             <span>{error}</span>
           </div>
         )}
 
         {successInfo && (
-          <div className="alert-success">
+          <div className="alert-success" role="status">
+            <Sparkles size={18} className="alert-icon" />
             <span>{successInfo}</span>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="form-grid">
-          {/* Amount */}
+          {/* Amount Field with Quick Preset Chips */}
           <div className="form-row">
             <label className="form-label" htmlFor="amount">
               Amount <span className="required-star">*</span>
             </label>
             <div className="input-wrapper">
-              <input
-                id="amount"
-                type="number"
-                step="any"
-                min="1"
-                name="amount"
-                className="form-input"
-                placeholder="100.00"
-                value={formData.amount}
-                onChange={handleChange}
-                required
-              />
+              <div className="input-with-affix">
+                <span className="input-prefix">৳</span>
+                <input
+                  id="amount"
+                  type="number"
+                  step="any"
+                  min="1"
+                  name="amount"
+                  inputMode="decimal"
+                  className="form-input with-prefix"
+                  placeholder="100.00"
+                  value={formData.amount}
+                  onChange={handleChange}
+                  required
+                />
+                <span className="input-suffix">BDT</span>
+              </div>
+
+              {/* Quick Select Preset Buttons for easy mobile thumb taps */}
+              <div className="amount-chips-row">
+                <span className="chips-label">Quick select:</span>
+                {PRESET_AMOUNTS.map((amt) => (
+                  <button
+                    key={amt}
+                    type="button"
+                    className={`amount-chip ${formData.amount === amt ? 'active' : ''}`}
+                    onClick={() => handleSelectPresetAmount(amt)}
+                  >
+                    ৳{amt}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -171,35 +196,44 @@ export default function PaymentForm({ onSwitchToHistory }) {
               Customer Name <span className="required-star">*</span>
             </label>
             <div className="input-wrapper">
-              <input
-                id="customer_name"
-                type="text"
-                name="customer_name"
-                className="form-input"
-                placeholder="e.g. Tanvir Hossain"
-                value={formData.customer_name}
-                onChange={handleChange}
-                required
-              />
+              <div className="input-with-icon">
+                <User size={16} className="field-icon" />
+                <input
+                  id="customer_name"
+                  type="text"
+                  name="customer_name"
+                  autoComplete="name"
+                  className="form-input with-icon"
+                  placeholder="e.g. Tanvir Hossain"
+                  value={formData.customer_name}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
             </div>
           </div>
 
           {/* Customer Phone No */}
           <div className="form-row">
             <label className="form-label" htmlFor="customer_phone">
-              Customer Phone No <span className="required-star">*</span>
+              Phone Number <span className="required-star">*</span>
             </label>
             <div className="input-wrapper">
-              <input
-                id="customer_phone"
-                type="tel"
-                name="customer_phone"
-                className="form-input"
-                placeholder="017XXXXXXXX"
-                value={formData.customer_phone}
-                onChange={handleChange}
-                required
-              />
+              <div className="input-with-icon">
+                <Phone size={16} className="field-icon" />
+                <input
+                  id="customer_phone"
+                  type="tel"
+                  name="customer_phone"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  className="form-input with-icon"
+                  placeholder="017XXXXXXXX"
+                  value={formData.customer_phone}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
             </div>
           </div>
 
@@ -209,21 +243,25 @@ export default function PaymentForm({ onSwitchToHistory }) {
               Customer City <span className="required-star">*</span>
             </label>
             <div className="input-wrapper">
-              <input
-                id="customer_city"
-                type="text"
-                name="customer_city"
-                className="form-input"
-                placeholder="e.g. Dhaka"
-                value={formData.customer_city}
-                onChange={handleChange}
-                required
-              />
+              <div className="input-with-icon">
+                <MapPin size={16} className="field-icon" />
+                <input
+                  id="customer_city"
+                  type="text"
+                  name="customer_city"
+                  autoComplete="address-level2"
+                  className="form-input with-icon"
+                  placeholder="e.g. Dhaka"
+                  value={formData.customer_city}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
             </div>
           </div>
 
           {/* Customer Address */}
-          <div className="form-row">
+          <div className="form-row address-row">
             <label className="form-label" htmlFor="customer_address">
               Customer Address <span className="required-star">*</span>
             </label>
@@ -231,8 +269,9 @@ export default function PaymentForm({ onSwitchToHistory }) {
               <textarea
                 id="customer_address"
                 name="customer_address"
+                autoComplete="street-address"
                 className="form-textarea"
-                placeholder="e.g. House #10, Road #5, Mirpur, Dhaka"
+                placeholder="e.g. House #42, Road #11, Banani, Dhaka"
                 value={formData.customer_address}
                 onChange={handleChange}
                 required
@@ -246,22 +285,27 @@ export default function PaymentForm({ onSwitchToHistory }) {
               Customer Email
             </label>
             <div className="input-wrapper">
-              <input
-                id="customer_email"
-                type="email"
-                name="customer_email"
-                className="form-input"
-                placeholder="customer@example.com"
-                value={formData.customer_email}
-                onChange={handleChange}
-              />
+              <div className="input-with-icon">
+                <Mail size={16} className="field-icon" />
+                <input
+                  id="customer_email"
+                  type="email"
+                  name="customer_email"
+                  inputMode="email"
+                  autoComplete="email"
+                  className="form-input with-icon"
+                  placeholder="customer@example.com"
+                  value={formData.customer_email}
+                  onChange={handleChange}
+                />
+              </div>
             </div>
           </div>
 
           {/* Currency */}
           <div className="form-row">
             <label className="form-label" htmlFor="currency">
-              currency <span className="required-star">*</span>
+              Currency <span className="required-star">*</span>
             </label>
             <div className="input-wrapper">
               <input
@@ -280,7 +324,7 @@ export default function PaymentForm({ onSwitchToHistory }) {
             <button
               id="pay-now-btn"
               type="submit"
-              className="btn-pay"
+              className="btn-pay main-action"
               disabled={loading}
             >
               {loading ? (
@@ -291,7 +335,7 @@ export default function PaymentForm({ onSwitchToHistory }) {
               ) : (
                 <>
                   <CreditCard size={18} />
-                  <span>PayNow</span>
+                  <span>Pay Now</span>
                 </>
               )}
             </button>
@@ -299,26 +343,28 @@ export default function PaymentForm({ onSwitchToHistory }) {
             <button
               id="default-btn"
               type="button"
-              className="btn-default"
+              className="btn-default secondary-action"
               onClick={handleFillDefault}
               disabled={loading}
               title="Autofill realistic test data"
             >
               <RotateCcw size={16} />
-              <span>Default</span>
+              <span>Fill Test Data</span>
             </button>
           </div>
         </form>
       </div>
 
-      {/* Security Footer */}
+      {/* Security Footer with Clean Responsive Pills */}
       <div className="security-footer">
-        <span>
-          <ShieldCheck size={16} color="#3ea74c" />
-          PCI-DSS Compliant 256-Bit SSL
-        </span>
-        <span>•</span>
-        <span>bKash / Nagad / Rocket / Cards Supported</span>
+        <div className="security-item">
+          <ShieldCheck size={16} className="security-icon" />
+          <span>PCI-DSS 256-Bit SSL</span>
+        </div>
+        <span className="security-sep">•</span>
+        <div className="security-item">
+          <span>bKash • Nagad • Rocket • Cards</span>
+        </div>
       </div>
     </div>
   );
